@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Music Player</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .player-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        audio {
+            width: 100%;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .error {
+            color: #ff0000;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #ffe6e6;
+            border-radius: 4px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="player-container">
+        <h1>Music Player</h1>
+        <button id="rickRollBtn" onclick="playRickRoll()">Play Rick Roll</button>
+        <button id="armageddonBtn" onclick="playArmageddon()">Play Armageddon</button>
+        <div id="error" class="error"></div>
+        <audio id="audioPlayer" controls>
+            Your browser does not support the audio element.
+        </audio>
+    </div>
+
+    <script>
+        const audioPlayer = document.getElementById('audioPlayer');
+        const rickRollBtn = document.getElementById('rickRollBtn');
+        const armageddonBtn = document.getElementById('armageddonBtn');
+        const errorDiv = document.getElementById('error');
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function setLoading(isLoading) {
+            rickRollBtn.disabled = isLoading;
+            armageddonBtn.disabled = isLoading;
+        }
+
+        async function playRickRoll() {
+            try {
+                setLoading(true);
+                errorDiv.style.display = 'none';
+                const response = await fetch('/rick-rolled');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch Rick Roll');
+                }
+                const data = await response.json();
+                console.log('Rick Roll Response:', data);
+                if (data.data && data.data.videoId) {
+                    const streamUrl = `/stream/${data.data.videoId}`;
+                    console.log('Stream URL:', streamUrl);
+                    
+                    // Check if the audio element can play the format
+                    const canPlay = audioPlayer.canPlayType('audio/mp4') || 
+                                  audioPlayer.canPlayType('audio/webm') || 
+                                  audioPlayer.canPlayType('audio/mpeg');
+                    
+                    if (!canPlay) {
+                        throw new Error('Your browser does not support the required audio formats');
+                    }
+                    
+                    audioPlayer.src = streamUrl;
+                    try {
+                        await audioPlayer.play();
+                    } catch (playError) {
+                        console.error('Play error:', playError);
+                        throw new Error('Failed to play audio: ' + playError.message);
+                    }
+                } else {
+                    console.log('Data structure:', JSON.stringify(data, null, 2));
+                    throw new Error('No video ID found in response');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        async function playArmageddon() {
+            try {
+                setLoading(true);
+                errorDiv.style.display = 'none';
+                const response = await fetch('/armageddon');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch Armageddon');
+                }
+                const data = await response.json();
+                console.log('Armageddon Response:', data);
+                if (data.data && data.data[0] && data.data[0].videoId) {
+                    const streamUrl = `/stream/${data.data[0].videoId}`;
+                    console.log('Stream URL:', streamUrl);
+                    
+                    // Check if the audio element can play the format
+                    const canPlay = audioPlayer.canPlayType('audio/mp4') || 
+                                  audioPlayer.canPlayType('audio/webm') || 
+                                  audioPlayer.canPlayType('audio/mpeg');
+                    
+                    if (!canPlay) {
+                        throw new Error('Your browser does not support the required audio formats');
+                    }
+                    
+                    audioPlayer.src = streamUrl;
+                    try {
+                        await audioPlayer.play();
+                    } catch (playError) {
+                        console.error('Play error:', playError);
+                        throw new Error('Failed to play audio: ' + playError.message);
+                    }
+                } else {
+                    console.log('Data structure:', JSON.stringify(data, null, 2));
+                    throw new Error('No video ID found in response');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Handle audio player errors
+        audioPlayer.addEventListener('error', (e) => {
+            console.error('Audio player error:', e.target.error);
+            showError('Error playing audio: ' + (e.target.error ? e.target.error.message : 'Unknown error'));
+        });
+
+        // Add support for more audio events
+        audioPlayer.addEventListener('loadedmetadata', () => {
+            console.log('Audio metadata loaded');
+        });
+
+        audioPlayer.addEventListener('loadeddata', () => {
+            console.log('Audio data loaded');
+        });
+
+        audioPlayer.addEventListener('canplay', () => {
+            console.log('Audio can play');
+        });
+    </script>
+</body>
+</html> 
